@@ -1,0 +1,10 @@
+# Fichiers de build
+devoir1
+*.o
+
+# Fichiers de configuration de l'éditeur
+.vscode/
+*.code-workspace
+
+# Fichiers système
+.DS_Store
