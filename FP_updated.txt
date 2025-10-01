@@ -1,40 +1,5 @@
---- START OF FILE FP.txt ---
-JOEL_SANDE
-6
-INF505
-INF123
-INF131
-INF401
-&
-Emilie_Faucher
-Laurie_Stephanie
-Genevieve_Lagacee
-&
-HENRI_POULARD
-7
-INF500
-INF153
-INF131
-INF401
-&
-Emilie_Vincent
-Laurie_Sauve
-&
-ERIC_DALLAIRE
-9
-INF354
-INF256
-INF132
-INF401
-&
-Christophe_Vincent
-Sylvie_Sauve
-Jean_Anthone
-Johannie_Letrier
-&
-ABOUBAKAR DIATE
 3
-8INF436
+8
 8IAR125
 &
 William_Shakespir
@@ -63,4 +28,5 @@ Vignon_Yanick
 Beausejour_Antoine
 Jean_Luc
 Kevin_Adams
+&
 &

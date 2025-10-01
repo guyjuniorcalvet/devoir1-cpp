@@ -5,11 +5,11 @@
 
 int main() {
     // Nom du fichier contenant les données initiales des professeurs
-    const char* fichierPF_initial = "FP.txt";
+    const std::string fichierPF_initial = "FP.txt";
     // Nom du fichier contenant les transactions
-    const char* fichierFT = "FT.txt";
+    const std::string fichierFT = "FT.txt";
     // Nom du fichier pour la recopie finale
-    const char* fichierPF_final = "FP_updated.txt"; // Nom différent pour ne pas écraser l'original pendant les tests
+    const std::string fichierPF_final = "FP_updated.txt"; // Nom différent pour ne pas écraser l'original pendant les tests
 
     // Création d'une instance de DossierProfesseur, ce qui charge les données depuis FP.txt
     std::cout << "Chargement des données initiales depuis " << fichierPF_initial << "..." << std::endl;
@@ -36,22 +36,23 @@ int main() {
         char operation;
         std::string parametre;
 
-        iss >> operation; // Lit le caractère de l'opération
+        iss >> operation; 
+        iss >> std::ws; 
 
         switch (operation) {
             case '#':
-                std::cout << monDossier.afficherLeProfPlusEtudiant() << std::endl;
+                std::cout << monDossier.afficherLeProfMoinsEtudiant() << std::endl;
                 break;
             case '*':
-                std::cout << monDossier.afficherCoursPlusDemande() << std::endl;
+                std::cout << monDossier.afficherCoursMoinsDemande() << std::endl;
                 break;
             case '%':
-                iss >> parametre; // Lit le paramètre (sigle du cours)
+                iss >> parametre; 
                 std::cout << "Nombre de professeurs pour le cours " << parametre << " : " 
                           << monDossier.affichernbreProfPourUnCours(parametre) << std::endl;
                 break;
             case '-':
-                iss >> parametre; // Lit le paramètre (nom du professeur)
+                iss >> parametre;
                 monDossier.supprimer(parametre);
                 break;
             case '$':
