@@ -5,40 +5,87 @@
 #include <string>
 #include <iostream>
 
+/**
+ * @class DossierProfesseur
+ * @brief Gère une liste chaînée de professeurs.
+ *
+ * Cette classe est responsable de la création, de la manipulation et de la destruction
+ * d'une liste de professeurs. Chaque professeur a une liste de cours souhaités et
+ * une liste d'étudiants dirigés.
+ * La classe peut lire les données depuis un fichier, effectuer des opérations
+ * sur la liste (suppression, recherche), et sauvegarder les modifications.
+ */
 class DossierProfesseur {
 private:
-    Professeur* tete; // Début de la liste chaînée des professeurs
+    Professeur* tete; // Pointeur vers le premier professeur de la liste.
 
-    // Fonctions utilitaires privées pour la gestion des sous-listes
+    // --- Fonctions utilitaires privées ---
+
+    /**
+     * @brief Détruit une liste chaînée de cours.
+     * @param teteCours Pointeur vers la tête de la liste de cours à détruire.
+     */
     void detruireListeCours(Cours*& teteCours);
+
+    /**
+     * @brief Détruit une liste chaînée d'étudiants.
+     * @param teteEtudiants Pointeur vers la tête de la liste d'étudiants à détruire.
+     */
     void detruireListeEtudiants(Etudiant*& teteEtudiants);
 
 public:
-    // Constructeur: Construit la liste chaînée à partir du fichier PF
+    /**
+     * @brief Constructeur.
+     * Charge les données des professeurs depuis un fichier pour construire la liste chaînée.
+     * @param nomFichierPF Nom du fichier contenant les données des professeurs.
+     */
     explicit DossierProfesseur(const std::string& nomFichierPF);
 
-    // Destructeur: Détruit la liste chaînée existante en mémoire
+    /**
+     * @brief Destructeur.
+     * Libère toute la mémoire allouée pour la liste chaînée de professeurs,
+     * y compris les listes de cours et d'étudiants associées.
+     */
     ~DossierProfesseur();
 
-    // Supprime de la liste chaînée tous les professeurs dont le nom est 'name'
-    void supprimer(const std::string& name);
+    /**
+     * @brief Supprime un ou plusieurs professeurs par nom.
+     * @param nom Le nom du ou des professeurs à supprimer.
+     */
+    void supprimerProfesseur(const std::string& nom);
 
-    // Affiche le nom du professeur ayant le plus d'étudiants
-    // En cas d'égalité, choisir le professeur le moins ancien (plus petit ancienneté)
-    std::string afficherLeProfPlusEtudiant() const;
+    /**
+     * @brief Trouve le nom du professeur ayant le plus grand nombre d'étudiants.
+     * En cas d'égalité, le professeur avec la plus petite ancienneté est choisi.
+     * @return Le nom du professeur.
+     */
+    std::string trouverProfAvecPlusDEtudiants() const;
 
-    // Affiche le cours le plus demandé de la liste
-    // En cas d'égalité, choisir celui correspondant au (premier) professeur le moins ancien
-    std::string afficherCoursPlusDemande() const;
+    /**
+     * @brief Trouve le sigle du cours le plus demandé par les professeurs.
+     * En cas d'égalité, le cours associé au professeur ayant la plus faible ancienneté est choisi.
+     * @return Le sigle du cours.
+     */
+    std::string trouverCoursLePlusDemande() const;
 
-    // Affiche le nombre de professeurs souhaitant enseigner le cours 'coursdonne'
-    int affichernbreProfPourUnCours(const std::string& coursdonne) const;
+    /**
+     * @brief Compte combien de professeurs souhaitent donner un cours spécifique.
+     * @param sigleCours Le sigle du cours à rechercher.
+     * @return Le nombre de professeurs.
+     */
+    int compterProfsPourUnCours(const std::string& sigleCours) const;
 
-    // Recopie la liste chaînée mise à jour dans le fichier PF
-    void recopier(const std::string& nomFichierPF) const;
+    /**
+     * @brief Sauvegarde l'état actuel de la liste de professeurs dans un fichier.
+     * @param nomFichierPF Le nom du fichier où sauvegarder les données.
+     */
+    void sauvegarderDansFichier(const std::string& nomFichierPF) const;
 
-    // Fonction d'affichage pour le débogage
-    void afficherTousLesProfesseurs() const;
+    /**
+     * @brief Affiche le contenu complet de la liste de professeurs.
+     * Utile pour le débogage.
+     */
+    void afficherContenu() const;
 };
 
 #endif // DOSSIERPROFESSEUR_H

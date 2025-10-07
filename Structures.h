@@ -6,9 +6,9 @@
 // Structure pour représenter un étudiant
 struct Etudiant {
     std::string nom;
-    Etudiant* apres; // Pointeur vers l'étudiant suivant
+    Etudiant* suivant; // Pointeur vers l'étudiant suivant
 
-    Etudiant(const std::string& n) : nom(n), apres(nullptr) {}
+    Etudiant(const std::string& n) : nom(n), suivant(nullptr) {}
 };
 
 // Structure pour représenter un cours

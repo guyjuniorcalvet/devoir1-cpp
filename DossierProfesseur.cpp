@@ -4,6 +4,8 @@
 #include <map>
 #include <limits>
 
+// --- Implémentation des fonctions utilitaires privées ---
+
 void DossierProfesseur::detruireListeCours(Cours*& teteCours) {
     while (teteCours != nullptr) {
         Cours* temp = teteCours;
@@ -15,67 +17,71 @@ void DossierProfesseur::detruireListeCours(Cours*& teteCours) {
 void DossierProfesseur::detruireListeEtudiants(Etudiant*& teteEtudiants) {
     while (teteEtudiants != nullptr) {
         Etudiant* temp = teteEtudiants;
-        teteEtudiants = teteEtudiants->apres;
+        teteEtudiants = teteEtudiants->suivant;
         delete temp;
     }
 }
 
-// ✅ Constructeur corrigé
+// --- Constructeur ---
 DossierProfesseur::DossierProfesseur(const std::string& nomFichierPF) : tete(nullptr) {
     std::ifstream fichier(nomFichierPF);
     if (!fichier.is_open()) {
-        std::cerr << "Erreur: Impossible d'ouvrir le fichier PF: " << nomFichierPF << std::endl;
+        std::cerr << "Erreur : Impossible d'ouvrir le fichier " << nomFichierPF << std::endl;
         return;
     }
 
     std::string ligne;
     Professeur* dernierProf = nullptr;
 
-    while (true) {
-        // Lire le nom du professeur
-        if (!std::getline(fichier, ligne)) break;
+    while (std::getline(fichier, ligne)) {
         if (ligne.empty()) continue;
-        std::string nomProf = ligne;
 
-        // Lire ancienneté
+        // 1. Lire les informations du professeur
+        std::string nomProf = ligne;
         if (!std::getline(fichier, ligne)) break;
         int anciennete = 0;
         try {
             anciennete = std::stoi(ligne);
         } catch (...) {
-            std::cerr << "Erreur: Ancienneté invalide pour " << nomProf << " (" << ligne << ")" << std::endl;
+            std::cerr << "Erreur de format : Ancienneté invalide pour " << nomProf << std::endl;
             continue;
         }
 
-        // Créer le professeur
+        // 2. Créer un nouveau professeur et l'ajouter à la liste
         Professeur* nouveauProf = new Professeur(nomProf, anciennete);
-        if (tete == nullptr) tete = nouveauProf;
-        else dernierProf->suivant = nouveauProf;
+        if (tete == nullptr) {
+            tete = nouveauProf;
+        } else {
+            dernierProf->suivant = nouveauProf;
+        }
         dernierProf = nouveauProf;
 
-        // Lire cours jusqu'à &
+        // 3. Lire la liste des cours souhaités (jusqu'au délimiteur '&')
         Cours* dernierCours = nullptr;
-        while (std::getline(fichier, ligne)) {
-            if (ligne == "&") break;
+        while (std::getline(fichier, ligne) && ligne != "&") {
             if (ligne.empty()) continue;
             Cours* nouveauCours = new Cours(ligne);
-            if (nouveauProf->listecours == nullptr) nouveauProf->listecours = nouveauCours;
-            else dernierCours->suivant = nouveauCours;
+            if (nouveauProf->listecours == nullptr) {
+                nouveauProf->listecours = nouveauCours;
+            } else {
+                dernierCours->suivant = nouveauCours;
+            }
             dernierCours = nouveauCours;
         }
 
-        // Lire étudiants jusqu'à &
+        // 4. Lire la liste des étudiants dirigés (jusqu'au délimiteur '&')
         Etudiant* dernierEtudiant = nullptr;
-        while (std::getline(fichier, ligne)) {
-            if (ligne == "&") break;
+        while (std::getline(fichier, ligne) && ligne != "&") {
             if (ligne.empty()) continue;
             Etudiant* nouvelEtudiant = new Etudiant(ligne);
-            if (nouveauProf->listetudiants == nullptr) nouveauProf->listetudiants = nouvelEtudiant;
-            else dernierEtudiant->apres = nouvelEtudiant;
+            if (nouveauProf->listetudiants == nullptr) {
+                nouveauProf->listetudiants = nouvelEtudiant;
+            } else {
+                dernierEtudiant->suivant = nouvelEtudiant;
+            }
             dernierEtudiant = nouvelEtudiant;
         }
     }
-
     fichier.close();
 }
 
@@ -83,167 +89,189 @@ DossierProfesseur::DossierProfesseur(const std::string& nomFichierPF) : tete(nul
 DossierProfesseur::~DossierProfesseur() {
     Professeur* actuel = tete;
     while (actuel != nullptr) {
-        Professeur* suivantProf = actuel->suivant;
-        detruireListeCours(actuel->listecours);
-        detruireListeEtudiants(actuel->listetudiants);
-        delete actuel;
-        actuel = suivantProf;
+        Professeur* aSupprimer = actuel;
+        actuel = actuel->suivant; // Avancer avant de supprimer
+
+        // Libérer les listes internes
+        detruireListeCours(aSupprimer->listecours);
+        detruireListeEtudiants(aSupprimer->listetudiants);
+
+        // Supprimer le professeur lui-même
+        delete aSupprimer;
     }
-    tete = nullptr;
+    tete = nullptr; // Assurer que la liste est bien vide
 }
 
-// --- Supprimer ---
-void DossierProfesseur::supprimer(const std::string& name) {
+// --- Suppression d'un professeur ---
+void DossierProfesseur::supprimerProfesseur(const std::string& nom) {
     Professeur* actuel = tete;
     Professeur* precedent = nullptr;
+    bool trouve = false;
 
     while (actuel != nullptr) {
-        if (actuel->nom == name) {
+        if (actuel->nom == nom) {
+            trouve = true;
             Professeur* aSupprimer = actuel;
-            if (precedent == nullptr) { 
+
+            if (precedent == nullptr) { // Cas où le prof est en tête de liste
                 tete = actuel->suivant;
                 actuel = tete;
-            } else {
+            } else { // Cas général
                 precedent->suivant = actuel->suivant;
                 actuel = precedent->suivant;
             }
+
+            // Libérer la mémoire du professeur supprimé
             detruireListeCours(aSupprimer->listecours);
             detruireListeEtudiants(aSupprimer->listetudiants);
             delete aSupprimer;
-            std::cout << "Professeur " << name << " supprimé." << std::endl;
         } else {
+            // Avancer dans la liste
             precedent = actuel;
             actuel = actuel->suivant;
         }
     }
+
+    if (trouve) {
+        std::cout << "Le professeur '" << nom << "' a été supprimé." << std::endl;
+    } else {
+        std::cout << "Le professeur '" << nom << "' n'a pas été trouvé." << std::endl;
+    }
 }
 
-// --- Afficher le prof avec le plus d’étudiants ---
-std::string DossierProfesseur::afficherLeProfPlusEtudiant() const {
+// --- Recherche du professeur avec le plus d'étudiants ---
+std::string DossierProfesseur::trouverProfAvecPlusDEtudiants() const {
     if (tete == nullptr) {
-        return "Aucun professeur dans la liste.";
+        return "La liste de professeurs est vide.";
     }
 
-    std::string nomProfPlusEtudiants = "";
-    int maxEtudiants = std::numeric_limits<int>::min();
-    int minAnciennetePourEgalite = std::numeric_limits<int>::max();
+    Professeur* profMaxEtudiants = nullptr;
+    int maxEtudiants = -1;
 
     Professeur* actuel = tete;
     while (actuel != nullptr) {
-        int countEtudiants = 0;
+        // Compter les étudiants pour le professeur actuel
+        int nbEtudiants = 0;
         Etudiant* etudiantActuel = actuel->listetudiants;
         while (etudiantActuel != nullptr) {
-            countEtudiants++;
-            etudiantActuel = etudiantActuel->apres;
+            nbEtudiants++;
+            etudiantActuel = etudiantActuel->suivant;
         }
 
-        if (countEtudiants > maxEtudiants) {
-            maxEtudiants = countEtudiants;
-            nomProfPlusEtudiants = actuel->nom;
-            minAnciennetePourEgalite = actuel->anciennete;
-        } else if (countEtudiants == maxEtudiants) {
-            if (actuel->anciennete < minAnciennetePourEgalite) {
-                nomProfPlusEtudiants = actuel->nom;
-                minAnciennetePourEgalite = actuel->anciennete;
+        // Mettre à jour si on trouve un nouveau maximum
+        if (nbEtudiants > maxEtudiants) {
+            maxEtudiants = nbEtudiants;
+            profMaxEtudiants = actuel;
+        }
+        // Gérer le cas d'égalité : on choisit le prof le moins ancien
+        else if (nbEtudiants == maxEtudiants) {
+            if (profMaxEtudiants != nullptr && actuel->anciennete < profMaxEtudiants->anciennete) {
+                profMaxEtudiants = actuel;
             }
         }
         actuel = actuel->suivant;
     }
-    return "Professeur avec le plus d'étudiants: " + nomProfPlusEtudiants + " (" + std::to_string(maxEtudiants) + " étudiants)";
+
+    if (profMaxEtudiants != nullptr) {
+        return "Le professeur avec le plus d'étudiants est : " + profMaxEtudiants->nom +
+               " (" + std::to_string(maxEtudiants) + " étudiants).";
+    }
+    return "Aucun étudiant trouvé pour aucun professeur.";
 }
 
-// --- Afficher le cours le plus demandé ---
-std::string DossierProfesseur::afficherCoursPlusDemande() const {
+// --- Recherche du cours le plus demandé ---
+std::string DossierProfesseur::trouverCoursLePlusDemande() const {
     if (tete == nullptr) {
-        return "Aucun professeur dans la liste, impossible de trouver le cours le moins demandé.";
+        return "La liste de professeurs est vide.";
     }
 
-    std::map<std::string, int> coursDemandes;
-
+    // Étape 1: Compter les demandes pour chaque cours
+    std::map<std::string, int> compteurCours;
     Professeur* actuel = tete;
     while (actuel != nullptr) {
         Cours* coursActuel = actuel->listecours;
         while (coursActuel != nullptr) {
-            coursDemandes[coursActuel->sigle]++;
+            compteurCours[coursActuel->sigle]++;
             coursActuel = coursActuel->suivant;
         }
         actuel = actuel->suivant;
     }
 
-    if (coursDemandes.empty()) {
-        return "Aucun cours trouvé dans la liste.";
+    if (compteurCours.empty()) {
+        return "Aucun cours n'est demandé.";
     }
 
-    std::string coursPlusDemande = "";
-    int maxDemandes = std::numeric_limits<int>::min();
-    int minAnciennetePourEgalite = std::numeric_limits<int>::max();
+    // Étape 2: Trouver le cours avec le maximum de demandes
+    std::string coursMax = "";
+    int maxDemandes = 0;
 
-    for (const auto& pair : coursDemandes) {
-        const std::string& sigle = pair.first;
-        int nbDemandes = pair.second;
+    for (const auto& pair : compteurCours) {
+        if (pair.second > maxDemandes) {
+            maxDemandes = pair.second;
+            coursMax = pair.first;
+        }
+    }
 
-        int minAncienneteCeCours = std::numeric_limits<int>::max();
-        Professeur* profRecherche = tete;
-        while (profRecherche != nullptr) {
-            Cours* coursRecherche = profRecherche->listecours;
-            while (coursRecherche != nullptr) {
-                if (coursRecherche->sigle == sigle) {
-                    if (profRecherche->anciennete < minAncienneteCeCours) {
-                        minAncienneteCeCours = profRecherche->anciennete;
+    // Étape 3: Gérer les égalités en trouvant le prof le moins ancien
+    int ancienneteMin = std::numeric_limits<int>::max();
+    for (const auto& pair : compteurCours) {
+        if (pair.second == maxDemandes) {
+            // Pour ce cours, trouver le prof le moins ancien qui le demande
+            Professeur* profCourant = tete;
+            while (profCourant != nullptr) {
+                Cours* coursCourant = profCourant->listecours;
+                while (coursCourant != nullptr) {
+                    if (coursCourant->sigle == pair.first) {
+                        if (profCourant->anciennete < ancienneteMin) {
+                            ancienneteMin = profCourant->anciennete;
+                            coursMax = pair.first;
+                        }
+                        break; // On a trouvé le cours pour ce prof
                     }
-                    break;
+                    coursCourant = coursCourant->suivant;
                 }
-                coursRecherche = coursRecherche->suivant;
-            }
-            profRecherche = profRecherche->suivant;
-        }
-
-        if (nbDemandes > maxDemandes) {
-            maxDemandes = nbDemandes;
-            coursPlusDemande = sigle;
-            minAnciennetePourEgalite = minAncienneteCeCours;
-        } else if (nbDemandes == maxDemandes) {
-            if (minAncienneteCeCours < minAnciennetePourEgalite) {
-                coursPlusDemande = sigle;
-                minAnciennetePourEgalite = minAncienneteCeCours;
+                profCourant = profCourant->suivant;
             }
         }
     }
 
-    return "Cours le plus demandé: " + coursPlusDemande + " (" + std::to_string(maxDemandes) + " demandes)";
+    return "Le cours le plus demandé est : " + coursMax +
+           " (" + std::to_string(maxDemandes) + " demandes).";
 }
 
-// --- Nombre de profs pour un cours ---
-int DossierProfesseur::affichernbreProfPourUnCours(const std::string& coursdonne) const {
-    int count = 0;
+// --- Comptage du nombre de professeurs pour un cours donné ---
+int DossierProfesseur::compterProfsPourUnCours(const std::string& sigleCours) const {
+    int compteur = 0;
     Professeur* actuel = tete;
     while (actuel != nullptr) {
         Cours* coursActuel = actuel->listecours;
         while (coursActuel != nullptr) {
-            if (coursActuel->sigle == coursdonne) {
-                count++;
-                break;
+            if (coursActuel->sigle == sigleCours) {
+                compteur++;
+                break; // On passe au prof suivant dès qu'on trouve le cours
             }
             coursActuel = coursActuel->suivant;
         }
         actuel = actuel->suivant;
     }
-    return count;
+    return compteur;
 }
 
-// --- Recopie ---
-void DossierProfesseur::recopier(const std::string& nomFichierPF) const {
+// --- Sauvegarde de la liste dans un fichier ---
+void DossierProfesseur::sauvegarderDansFichier(const std::string& nomFichierPF) const {
     std::ofstream fichier(nomFichierPF);
     if (!fichier.is_open()) {
-        std::cerr << "Erreur: Impossible d'ouvrir le fichier de recopie: " << nomFichierPF << std::endl;
+        std::cerr << "Erreur : Impossible d'ouvrir le fichier de sauvegarde " << nomFichierPF << std::endl;
         return;
     }
 
     Professeur* actuel = tete;
     while (actuel != nullptr) {
+        // Écrire les infos du prof
         fichier << actuel->nom << std::endl;
         fichier << actuel->anciennete << std::endl;
 
+        // Écrire la liste de cours
         Cours* coursActuel = actuel->listecours;
         while (coursActuel != nullptr) {
             fichier << coursActuel->sigle << std::endl;
@@ -251,55 +279,61 @@ void DossierProfesseur::recopier(const std::string& nomFichierPF) const {
         }
         fichier << "&" << std::endl;
 
+        // Écrire la liste d'étudiants
         Etudiant* etudiantActuel = actuel->listetudiants;
         while (etudiantActuel != nullptr) {
             fichier << etudiantActuel->nom << std::endl;
-            etudiantActuel = etudiantActuel->apres;
+            etudiantActuel = etudiantActuel->suivant;
         }
         fichier << "&" << std::endl;
 
         actuel = actuel->suivant;
     }
     fichier.close();
-    std::cout << "Liste chaînée recopiée dans " << nomFichierPF << std::endl;
+    std::cout << "La liste a été sauvegardée dans " << nomFichierPF << std::endl;
 }
 
-// --- Affichage ---
-void DossierProfesseur::afficherTousLesProfesseurs() const {
-    std::cout << "\n--- Affichage de tous les professeurs ---" << std::endl;
+// --- Affichage du contenu pour débogage ---
+void DossierProfesseur::afficherContenu() const {
+    std::cout << "\n--- Contenu actuel de la liste des professeurs ---\n";
     if (tete == nullptr) {
-        std::cout << "La liste est vide." << std::endl;
+        std::cout << "La liste est vide.\n";
         return;
     }
 
     Professeur* actuelProf = tete;
+    int i = 1;
     while (actuelProf != nullptr) {
-        std::cout << "Professeur: " << actuelProf->nom
-                  << ", Ancienneté: " << actuelProf->anciennete << std::endl;
+        std::cout << i++ << ". Professeur: " << actuelProf->nom
+                  << " (Ancienneté: " << actuelProf->anciennete << ")\n";
 
-        std::cout << "  Cours souhaités: ";
-        Cours* actuelCours = actuelProf->listecours;
-        if (actuelCours == nullptr) {
-            std::cout << "Aucun.";
+        // Afficher les cours
+        std::cout << "   - Cours souhaités: ";
+        if (actuelProf->listecours == nullptr) {
+            std::cout << "Aucun";
+        } else {
+            Cours* actuelCours = actuelProf->listecours;
+            while (actuelCours != nullptr) {
+                std::cout << actuelCours->sigle << (actuelCours->suivant ? ", " : "");
+                actuelCours = actuelCours->suivant;
+            }
         }
-        while (actuelCours != nullptr) {
-            std::cout << actuelCours->sigle << " ";
-            actuelCours = actuelCours->suivant;
-        }
-        std::cout << std::endl;
+        std::cout << "\n";
 
-        std::cout << "  Étudiants dirigés: ";
-        Etudiant* actuelEtudiant = actuelProf->listetudiants;
-        if (actuelEtudiant == nullptr) {
-            std::cout << "Aucun.";
+        // Afficher les étudiants
+        std::cout << "   - Étudiants dirigés: ";
+        if (actuelProf->listetudiants == nullptr) {
+            std::cout << "Aucun";
+        } else {
+            Etudiant* actuelEtudiant = actuelProf->listetudiants;
+            while (actuelEtudiant != nullptr) {
+                std::cout << actuelEtudiant->nom << (actuelEtudiant->suivant ? ", " : "");
+                actuelEtudiant = actuelEtudiant->suivant;
+            }
         }
-        while (actuelEtudiant != nullptr) {
-            std::cout << actuelEtudiant->nom << " ";
-            actuelEtudiant = actuelEtudiant->apres;
-        }
-        std::cout << std::endl << std::endl;
+        std::cout << "\n\n";
 
         actuelProf = actuelProf->suivant;
     }
-    std::cout << "---------------------------------------" << std::endl;
+    std::cout << "--- Fin de la liste ---\n";
 }
